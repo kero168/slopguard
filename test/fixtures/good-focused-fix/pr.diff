@@ -1,0 +1,47 @@
+diff --git a/src/date-range.js b/src/date-range.js
+index 3f1c2aa..9b4e0d1 100644
+--- a/src/date-range.js
++++ b/src/date-range.js
+@@ -12,11 +12,14 @@ function startOfDay(date) {
+   return d;
+ }
+ 
++function endOfDay(date) {
++  const d = new Date(date);
++  d.setHours(23, 59, 59, 999);
++  return d;
++}
++
+ export function isInRange(date, range) {
+   const value = date.getTime();
+-  if (value < startOfDay(range.from).getTime()) return false;
+-  if (value > range.to.getTime()) return false;
+-  return true;
++  if (value < startOfDay(range.from).getTime()) return false;
++  return value <= endOfDay(range.to).getTime();
+ }
+diff --git a/test/date-range.test.js b/test/date-range.test.js
+index 77aa210..c02d9f3 100644
+--- a/test/date-range.test.js
++++ b/test/date-range.test.js
+@@ -30,6 +30,19 @@ test('excludes dates before the range', () => {
+   assert.equal(isInRange(new Date('2024-05-31T12:00:00Z'), june), false);
+ });
+ 
++test('includes the final day of the range (#142)', () => {
++  const june = {
++    from: new Date('2024-06-01T00:00:00Z'),
++    to: new Date('2024-06-30T00:00:00Z'),
++  };
++  // Regression: an event in the afternoon of the last day was dropped.
++  assert.equal(isInRange(new Date('2024-06-30T15:30:00Z'), june), true);
++});
++
++test('still excludes the day after the range ends', () => {
++  const june = { from: new Date('2024-06-01T00:00:00Z'), to: new Date('2024-06-30T00:00:00Z') };
++  assert.equal(isInRange(new Date('2024-07-01T00:00:05Z'), june), false);
++});
++
+ test('handles single-day ranges', () => {
+   const day = { from: new Date('2024-06-15T00:00:00Z'), to: new Date('2024-06-15T00:00:00Z') };
+   assert.equal(isInRange(new Date('2024-06-15T09:00:00Z'), day), true);

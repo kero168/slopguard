@@ -1,0 +1,14 @@
+{
+  "number": 214,
+  "title": "Fix off-by-one in date range filter (#142)",
+  "body": "## What\n\nThe date range filter excluded the final day of the selected range, so a report for \"June 1 - June 30\" silently dropped June 30.\n\nFixes #142\n\n## Why\n\n`isInRange` compared with `<` where the spec (and the UI copy) treat the end date as inclusive. Switched to `<=` and normalized the end date to 23:59:59.999 before comparing.\n\n## How I checked it\n\n- Added a regression case in `test/date-range.test.js` that fails on `main` and passes here\n- `npm test` passes locally on Node 20.11\n- Manually walked through the exact report from #142 before and after the change",
+  "user": { "login": "hikari-dev", "type": "User" },
+  "author_association": "CONTRIBUTOR",
+  "additions": 21,
+  "deletions": 4,
+  "changed_files": 2,
+  "commits": 1,
+  "html_url": "https://github.com/example/reports/pull/214",
+  "draft": false,
+  "labels": [{ "name": "bug" }]
+}

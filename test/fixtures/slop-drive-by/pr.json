@@ -1,0 +1,14 @@
+{
+  "number": 77,
+  "title": "Update",
+  "body": "Improvements.",
+  "user": { "login": "dr1veby123", "type": "User" },
+  "author_association": "FIRST_TIME_CONTRIBUTOR",
+  "additions": 1618,
+  "deletions": 483,
+  "changed_files": 15,
+  "commits": 1,
+  "html_url": "https://github.com/example/reports/pull/77",
+  "draft": false,
+  "labels": []
+}

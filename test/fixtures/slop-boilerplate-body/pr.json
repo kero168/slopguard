@@ -1,0 +1,14 @@
+{
+  "number": 341,
+  "title": "Enhance error handling and improve code quality",
+  "body": "This pull request enhances the overall codebase by introducing robust error handling throughout the API layer, leveraging industry best practices.\n\n## Key Improvements:\n\n- Enhanced error handling for a more seamless experience\n- Improved code quality, maintainability and readability\n- Streamlined the internal retry logic\n\nThese changes significantly improve the reliability of the application.",
+  "user": { "login": "devhelper-pro", "type": "User" },
+  "author_association": "CONTRIBUTOR",
+  "additions": 265,
+  "deletions": 41,
+  "changed_files": 3,
+  "commits": 1,
+  "html_url": "https://github.com/example/reports/pull/341",
+  "draft": false,
+  "labels": []
+}

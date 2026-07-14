@@ -1,0 +1,309 @@
+diff --git a/src/api/client.js b/src/api/client.js
+index 2222222..3333333 100644
+--- a/src/api/client.js
++++ b/src/api/client.js
+@@ -10,40 +10,140 @@
+-  const response0 = fetchData(endpoint0);
+-  const response1 = fetchData(endpoint1);
+-  const response2 = fetchData(endpoint2);
+-  const response3 = fetchData(endpoint3);
+-  const response4 = fetchData(endpoint4);
+-  const response5 = fetchData(endpoint5);
+-  const response6 = fetchData(endpoint6);
+-  const response7 = fetchData(endpoint7);
+-  const response8 = fetchData(endpoint8);
+-  const response9 = fetchData(endpoint9);
+-  const response10 = fetchData(endpoint10);
+-  const response11 = fetchData(endpoint11);
+-  const response12 = fetchData(endpoint12);
+-  const response13 = fetchData(endpoint13);
+-  const response14 = fetchData(endpoint14);
+-  const response15 = fetchData(endpoint15);
+-  const response16 = fetchData(endpoint16);
+-  const response17 = fetchData(endpoint17);
+-  const response18 = fetchData(endpoint18);
+-  const response19 = fetchData(endpoint19);
++  let response0;
++  try {
++    response0 = await fetchData(endpoint0);
++  } catch (error) {
++    console.error('An error occurred while fetching endpoint0:', error);
++    throw error;
++  }
++  let response1;
++  try {
++    response1 = await fetchData(endpoint1);
++  } catch (error) {
++    console.error('An error occurred while fetching endpoint1:', error);
++    throw error;
++  }
++  let response2;
++  try {
++    response2 = await fetchData(endpoint2);
++  } catch (error) {
++    console.error('An error occurred while fetching endpoint2:', error);
++    throw error;
++  }
++  let response3;
++  try {
++    response3 = await fetchData(endpoint3);
++  } catch (error) {
++    console.error('An error occurred while fetching endpoint3:', error);
++    throw error;
++  }
++  let response4;
++  try {
++    response4 = await fetchData(endpoint4);
++  } catch (error) {
++    console.error('An error occurred while fetching endpoint4:', error);
++    throw error;
++  }
++  let response5;
++  try {
++    response5 = await fetchData(endpoint5);
++  } catch (error) {
++    console.error('An error occurred while fetching endpoint5:', error);
++    throw error;
++  }
++  let response6;
++  try {
++    response6 = await fetchData(endpoint6);
++  } catch (error) {
++    console.error('An error occurred while fetching endpoint6:', error);
++    throw error;
++  }
++  let response7;
++  try {
++    response7 = await fetchData(endpoint7);
++  } catch (error) {
++    console.error('An error occurred while fetching endpoint7:', error);
++    throw error;
++  }
++  let response8;
++  try {
++    response8 = await fetchData(endpoint8);
++  } catch (error) {
++    console.error('An error occurred while fetching endpoint8:', error);
++    throw error;
++  }
++  let response9;
++  try {
++    response9 = await fetchData(endpoint9);
++  } catch (error) {
++    console.error('An error occurred while fetching endpoint9:', error);
++    throw error;
++  }
++  let response10;
++  try {
++    response10 = await fetchData(endpoint10);
++  } catch (error) {
++    console.error('An error occurred while fetching endpoint10:', error);
++    throw error;
++  }
++  let response11;
++  try {
++    response11 = await fetchData(endpoint11);
++  } catch (error) {
++    console.error('An error occurred while fetching endpoint11:', error);
++    throw error;
++  }
++  let response12;
++  try {
++    response12 = await fetchData(endpoint12);
++  } catch (error) {
++    console.error('An error occurred while fetching endpoint12:', error);
++    throw error;
++  }
++  let response13;
++  try {
++    response13 = await fetchData(endpoint13);
++  } catch (error) {
++    console.error('An error occurred while fetching endpoint13:', error);
++    throw error;
++  }
++  let response14;
++  try {
++    response14 = await fetchData(endpoint14);
++  } catch (error) {
++    console.error('An error occurred while fetching endpoint14:', error);
++    throw error;
++  }
++  let response15;
++  try {
++    response15 = await fetchData(endpoint15);
++  } catch (error) {
++    console.error('An error occurred while fetching endpoint15:', error);
++    throw error;
++  }
++  let response16;
++  try {
++    response16 = await fetchData(endpoint16);
++  } catch (error) {
++    console.error('An error occurred while fetching endpoint16:', error);
++    throw error;
++  }
++  let response17;
++  try {
++    response17 = await fetchData(endpoint17);
++  } catch (error) {
++    console.error('An error occurred while fetching endpoint17:', error);
++    throw error;
++  }
++  let response18;
++  try {
++    response18 = await fetchData(endpoint18);
++  } catch (error) {
++    console.error('An error occurred while fetching endpoint18:', error);
++    throw error;
++  }
++  let response19;
++  try {
++    response19 = await fetchData(endpoint19);
++  } catch (error) {
++    console.error('An error occurred while fetching endpoint19:', error);
++    throw error;
++  }
+diff --git a/src/api/retry.js b/src/api/retry.js
+new file mode 100644
+index 0000000..1111111
+--- /dev/null
++++ b/src/api/retry.js
+@@ -0,0 +1,80 @@
++export async function withRetry(operation, options = {}) {
++  const maxAttempts = options.maxAttempts ?? 3;
++  const baseDelay = options.baseDelay ?? 250;
++  let lastError;
++  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
++    try {
++      return await operation();
++    } catch (error) {
++      lastError = error;
++      const delay = baseDelay * 2 ** (attempt - 1);
++      await new Promise((resolve) => setTimeout(resolve, delay));
++    }
++  }
++  throw lastError;
++}
++
++export async function withRetryPolicy0(operation) {
++  return withRetry(operation, { maxAttempts: 2 });
++}
++
++export async function withRetryPolicy1(operation) {
++  return withRetry(operation, { maxAttempts: 3 });
++}
++
++export async function withRetryPolicy2(operation) {
++  return withRetry(operation, { maxAttempts: 4 });
++}
++
++export async function withRetryPolicy3(operation) {
++  return withRetry(operation, { maxAttempts: 5 });
++}
++
++export async function withRetryPolicy4(operation) {
++  return withRetry(operation, { maxAttempts: 2 });
++}
++
++export async function withRetryPolicy5(operation) {
++  return withRetry(operation, { maxAttempts: 3 });
++}
++
++export async function withRetryPolicy6(operation) {
++  return withRetry(operation, { maxAttempts: 4 });
++}
++
++export async function withRetryPolicy7(operation) {
++  return withRetry(operation, { maxAttempts: 5 });
++}
++
++export async function withRetryPolicy8(operation) {
++  return withRetry(operation, { maxAttempts: 2 });
++}
++
++export async function withRetryPolicy9(operation) {
++  return withRetry(operation, { maxAttempts: 3 });
++}
++
++export async function withRetryPolicy10(operation) {
++  return withRetry(operation, { maxAttempts: 4 });
++}
++
++export async function withRetryPolicy11(operation) {
++  return withRetry(operation, { maxAttempts: 5 });
++}
++
++export async function withRetryPolicy12(operation) {
++  return withRetry(operation, { maxAttempts: 2 });
++}
+diff --git a/src/core/logger.js b/src/core/logger.js
+index 2222222..3333333 100644
+--- a/src/core/logger.js
++++ b/src/core/logger.js
+@@ -1,20 +1,66 @@
+-  console.log('event 0');
+-  console.log('event 1');
+-  console.log('event 2');
+-  console.log('event 3');
+-  console.log('event 4');
+-  console.log('event 5');
+-  console.log('event 6');
+-  console.log('event 7');
+-  console.log('event 8');
+-  console.log('event 9');
++export function logEvent0(payload) {
++  logger.info({ event: 'event_0', payload });
++}
++
++export function logEvent1(payload) {
++  logger.info({ event: 'event_1', payload });
++}
++
++export function logEvent2(payload) {
++  logger.info({ event: 'event_2', payload });
++}
++
++export function logEvent3(payload) {
++  logger.info({ event: 'event_3', payload });
++}
++
++export function logEvent4(payload) {
++  logger.info({ event: 'event_4', payload });
++}
++
++export function logEvent5(payload) {
++  logger.info({ event: 'event_5', payload });
++}
++
++export function logEvent6(payload) {
++  logger.info({ event: 'event_6', payload });
++}
++
++export function logEvent7(payload) {
++  logger.info({ event: 'event_7', payload });
++}
++
++export function logEvent8(payload) {
++  logger.info({ event: 'event_8', payload });
++}
++
++export function logEvent9(payload) {
++  logger.info({ event: 'event_9', payload });
++}
++
++export function logEvent10(payload) {
++  logger.info({ event: 'event_10', payload });
++}
++
++export function logEvent11(payload) {
++  logger.info({ event: 'event_11', payload });
++}
++
++export function logEvent12(payload) {
++  logger.info({ event: 'event_12', payload });
++}
++
++export function logEvent13(payload) {
++  logger.info({ event: 'event_13', payload });
++}
++

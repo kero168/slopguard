@@ -1,0 +1,39 @@
+name: Signal feedback (false positive / false negative)
+description: >-
+  A PR scored higher or lower than it deserved. This is the most valuable
+  issue type for this project — the heuristics only get better through
+  real-world counterexamples.
+labels: [signal-tuning]
+body:
+  - type: markdown
+    attributes:
+      value: >-
+        Thank you — calibration reports directly improve the defaults.
+        Please redact anything private. Never name-and-shame a contributor;
+        describe the PR shape, not the person.
+  - type: dropdown
+    id: direction
+    attributes:
+      label: Direction
+      options:
+        - 'False positive: a fine PR scored too high'
+        - 'False negative: a low-effort PR scored too low'
+    validations:
+      required: true
+  - type: textarea
+    id: shape
+    attributes:
+      label: PR shape
+      description: Size, file mix, description style, contributor context — whatever is relevant.
+    validations:
+      required: true
+  - type: textarea
+    id: signals
+    attributes:
+      label: Which signals fired (or should have)?
+      description: Paste the signal table from the report if you can.
+  - type: textarea
+    id: suggestion
+    attributes:
+      label: Suggested adjustment (optional)
+      description: Weight/threshold change, new pattern, exemption idea, etc.

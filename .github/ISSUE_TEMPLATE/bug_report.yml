@@ -1,0 +1,29 @@
+name: Bug report
+description: Something crashed, mis-parsed, or produced a wrong number.
+labels: [bug]
+body:
+  - type: input
+    id: version
+    attributes:
+      label: slopguard version
+      placeholder: '0.1.0 (slopguard --version)'
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: Include the exact command and, if possible, the (redacted) PR JSON / diff that triggered it.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect?
+    validations:
+      required: true
+  - type: textarea
+    id: env
+    attributes:
+      label: Environment
+      placeholder: 'OS, Node version, CLI or GitHub Action'

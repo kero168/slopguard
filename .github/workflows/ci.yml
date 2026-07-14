@@ -1,0 +1,39 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Build & test (Node ${{ matrix.node }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node: ['20', '22']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - run: node --test
+      - name: CLI smoke test against fixtures
+        run: |
+          node dist/cli.js \
+            --pr test/fixtures/slop-mega-dump/pr.json \
+            --diff test/fixtures/slop-mega-dump/pr.diff \
+            --no-color
+          node dist/cli.js \
+            --pr test/fixtures/good-focused-fix/pr.json \
+            --diff test/fixtures/good-focused-fix/pr.diff \
+            --format markdown
+      - name: Pack check (publishable artifact)
+        run: npm pack --dry-run

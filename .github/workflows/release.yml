@@ -1,0 +1,41 @@
+name: Release
+
+# Publishes to npm on version tags (v0.1.0, v1.2.3, ...) using OIDC
+# trusted publishing — no long-lived npm token is stored in this repo.
+#
+# One-time setup on npmjs.com: package settings -> "Trusted publisher"
+# -> GitHub Actions -> repository kero168/slopguard, workflow release.yml.
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write # OIDC token for npm trusted publishing + provenance
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          registry-url: 'https://registry.npmjs.org'
+      - name: Ensure npm supports OIDC trusted publishing
+        run: npm install -g npm@latest
+      - run: npm ci
+      - run: npm test
+      - name: Verify tag matches package.json version
+        run: |
+          TAG_VERSION="${GITHUB_REF_NAME#v}"
+          PKG_VERSION="$(node -p "require('./package.json').version")"
+          if [ "$TAG_VERSION" != "$PKG_VERSION" ]; then
+            echo "Tag $TAG_VERSION does not match package.json $PKG_VERSION" >&2
+            exit 1
+          fi
+      - run: npm publish --provenance --access public

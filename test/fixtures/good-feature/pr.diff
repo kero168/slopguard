@@ -1,0 +1,167 @@
+diff --git a/src/report/csv.js b/src/report/csv.js
+new file mode 100644
+index 0000000..b31f2c8
+--- /dev/null
++++ b/src/report/csv.js
+@@ -0,0 +1,58 @@
++// CSV formatter for usage reports. Column order is part of the public
++// contract (see docs/usage.md); append new columns at the end only.
++const COLUMNS = ['account_id', 'period', 'requests', 'bytes_in', 'bytes_out', 'plan'];
++
++function escapeField(value) {
++  const s = String(value ?? '');
++  if (/[",\r\n]/.test(s)) {
++    return `"${s.replace(/"/g, '""')}"`;
++  }
++  return s;
++}
++
++export function csvHeader() {
++  return COLUMNS.join(',');
++}
++
++export function csvRow(entry) {
++  return COLUMNS.map((c) => escapeField(entry[c])).join(',');
++}
++
++export async function* csvLines(reportIterator) {
++  yield csvHeader();
++  for await (const entry of reportIterator) {
++    yield csvRow(entry);
++  }
++}
++
++export async function writeCsv(reportIterator, stream) {
++  for await (const line of csvLines(reportIterator)) {
++    if (!stream.write(`${line}\n`)) {
++      await new Promise((resolve) => stream.once('drain', resolve));
++    }
++  }
++}
++
++export function csvFilename(period) {
++  return `usage-${period.year}-${String(period.month).padStart(2, '0')}.csv`;
++}
++
++// Small helper kept here (rather than utils) because the quoting rules are
++// CSV-specific and should not be reused for other formats accidentally.
++export function previewRows(entries, limit = 5) {
++  const rows = [csvHeader()];
++  for (const entry of entries.slice(0, limit)) {
++    rows.push(csvRow(entry));
++  }
++  return rows;
++}
++
++export default {
++  csvHeader,
++  csvRow,
++  csvLines,
++  writeCsv,
++  csvFilename,
++  previewRows,
++};
+diff --git a/src/cli.js b/src/cli.js
+index 51d2b7e..8c90a11 100644
+--- a/src/cli.js
++++ b/src/cli.js
+@@ -8,6 +8,7 @@ import { generateReport } from './report/generate.js';
++import { writeCsv, csvFilename } from './report/csv.js';
+ 
+ export async function reportsGenerate(args) {
+   const period = parsePeriod(args.period);
+@@ -22,10 +23,18 @@ export async function reportsGenerate(args) {
+   const iterator = generateReport(period, args.account);
+-  await writeJson(iterator, process.stdout);
++  if (args.csv) {
++    const target = args.output
++      ? createWriteStream(args.output)
++      : process.stdout;
++    await writeCsv(iterator, target);
++    if (args.output) {
++      console.error(`wrote ${csvFilename(period)}`);
++    }
++  } else {
++    await writeJson(iterator, process.stdout);
++  }
+ }
+diff --git a/test/csv-export.test.js b/test/csv-export.test.js
+new file mode 100644
+index 0000000..4efc7aa
+--- /dev/null
++++ b/test/csv-export.test.js
+@@ -0,0 +1,54 @@
++import { test } from 'node:test';
++import assert from 'node:assert/strict';
++import { csvHeader, csvRow, csvLines, previewRows } from '../src/report/csv.js';
++
++test('header lists the documented columns in order', () => {
++  assert.equal(
++    csvHeader(),
++    'account_id,period,requests,bytes_in,bytes_out,plan',
++  );
++});
++
++test('quotes fields containing commas', () => {
++  const row = csvRow({ account_id: 'a,b', period: '2024-06', requests: 3 });
++  assert.ok(row.startsWith('"a,b",2024-06,3'));
++});
++
++test('doubles embedded quotes per RFC 4180', () => {
++  const row = csvRow({ account_id: 'say "hi"', period: '2024-06' });
++  assert.ok(row.startsWith('"say ""hi""",'));
++});
++
++test('empty report still yields a header', async () => {
++  async function* empty() {}
++  const lines = [];
++  for await (const line of csvLines(empty())) lines.push(line);
++  assert.deepEqual(lines, [csvHeader()]);
++});
++
++test('multi-page iterators are streamed in order', async () => {
++  async function* pages() {
++    yield { account_id: 'a1', period: '2024-06', requests: 1 };
++    yield { account_id: 'a2', period: '2024-06', requests: 2 };
++  }
++  const lines = [];
++  for await (const line of csvLines(pages())) lines.push(line);
++  assert.equal(lines.length, 3);
++  assert.ok(lines[1].startsWith('a1,'));
++  assert.ok(lines[2].startsWith('a2,'));
++});
++
++test('previewRows caps output', () => {
++  const entries = Array.from({ length: 10 }, (_, i) => ({
++    account_id: `a${i}`,
++    period: '2024-06',
++  }));
++  assert.equal(previewRows(entries, 3).length, 4);
++});
+diff --git a/docs/usage.md b/docs/usage.md
+index 2ab01f9..77e3c02 100644
+--- a/docs/usage.md
++++ b/docs/usage.md
+@@ -41,6 +41,22 @@ reports generate --period 2024-06 --account acme
+ 
+ The default output is JSON, one object per line.
+ 
++### CSV export
++
++```
++reports generate --period 2024-06 --account acme --csv --output usage.csv
++```
++
++Columns, in order:
++
++| column | meaning |
++| --- | --- |
++| `account_id` | account identifier |
++| `period` | `YYYY-MM` |
++| `requests` | total API requests |
++| `bytes_in` / `bytes_out` | transfer totals |
++| `plan` | plan name at the end of the period |
++
+ ## Retention
+ 
+ Reports older than 18 months are archived.

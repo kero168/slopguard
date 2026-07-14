@@ -1,0 +1,14 @@
+{
+  "number": 233,
+  "title": "Add CSV export for monthly usage reports (#88)",
+  "body": "## Summary\n\nAdds a `--csv` flag to `reports generate`, as discussed in #88. The existing JSON output is unchanged and remains the default.\n\n## Design notes\n\n- Reuses the existing report iterator instead of buffering the whole report, so memory stays flat for large accounts\n- Column order is fixed and documented, so downstream spreadsheets don't break when we add fields\n- Quoting follows RFC 4180 (double quotes, doubled to escape)\n\n## How I checked it\n\n- New unit cases in `test/csv-export.test.js` cover quoting, empty reports, and multi-page iterators\n- `npm test` and `npm run lint` pass on Node 20 and 22\n- Generated a CSV against the staging dataset and spot-checked it in LibreOffice\n\n## Notes for reviewers\n\nThe formatter lives in `src/report/csv.js`; happy to move it if you'd rather keep formatters together.",
+  "user": { "login": "m-sato", "type": "User" },
+  "author_association": "MEMBER",
+  "additions": 291,
+  "deletions": 52,
+  "changed_files": 4,
+  "commits": 3,
+  "html_url": "https://github.com/example/reports/pull/233",
+  "draft": false,
+  "labels": [{ "name": "enhancement" }]
+}

@@ -1,0 +1,53 @@
+{
+  "name": "slopguard",
+  "version": "0.1.0",
+  "description": "Review-effort signals for pull requests that look like low-effort AI-generated changes. Signals, not verdicts.",
+  "keywords": [
+    "github-action",
+    "code-review",
+    "pull-request",
+    "triage",
+    "maintainer-tools",
+    "ai",
+    "heuristics"
+  ],
+  "homepage": "https://github.com/kero168/slopguard#readme",
+  "bugs": {
+    "url": "https://github.com/kero168/slopguard/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kero168/slopguard.git"
+  },
+  "license": "MIT",
+  "author": "kero168",
+  "type": "module",
+  "exports": {
+    ".": "./dist/index.js"
+  },
+  "types": "./dist/index.d.ts",
+  "bin": {
+    "slopguard": "dist/cli.js"
+  },
+  "files": [
+    "dist",
+    "action.yml",
+    "README.md",
+    "README.ja.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "clean": "rm -rf dist",
+    "pretest": "npm run build",
+    "test": "node --test",
+    "prepublishOnly": "npm run build"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.0",
+    "typescript": "^5.5.4"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

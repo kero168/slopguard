@@ -1,0 +1,22 @@
+cff-version: 1.2.0
+message: If you use this software, please cite it as below.
+type: software
+title: slopguard
+abstract: >-
+  Review-effort signals for pull requests that look like low-effort
+  AI-generated changes. A GitHub Action and CLI that surface weighted,
+  explained heuristics to help maintainers prioritize review time —
+  signals, not verdicts.
+authors:
+  - alias: kero168
+repository-code: 'https://github.com/kero168/slopguard'
+url: 'https://github.com/kero168/slopguard'
+license: MIT
+version: 0.1.0
+date-released: '2026-07-14'
+keywords:
+  - code-review
+  - pull-requests
+  - triage
+  - maintainer-tools
+  - heuristics

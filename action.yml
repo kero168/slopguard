@@ -1,0 +1,145 @@
+name: 'SlopGuard'
+description: >-
+  Review-effort signals for pull requests that look like low-effort
+  AI-generated changes. Surfaces weighted heuristics with reasons —
+  signals, not verdicts. It never blocks a PR unless you opt in.
+author: 'kero168'
+branding:
+  icon: 'life-buoy'
+  color: 'purple'
+
+inputs:
+  github-token:
+    description: >-
+      Token used to read the pull request and (only when dry-run is "false")
+      post or update the triage comment. Needs `pull-requests: write` for
+      commenting.
+    required: false
+    default: ${{ github.token }}
+  dry-run:
+    description: >-
+      When "true" (the default), SlopGuard never writes to the PR. The report
+      is printed to the job log, added to the step summary, and exposed via
+      outputs. Flip to "false" once you have watched the signals on real
+      traffic and trust the tuning.
+    required: false
+    default: 'true'
+  threshold:
+    description: >-
+      Optional score (0-100) at which the step exits with a failure. Empty
+      (the default) means the action never fails the build. Gating on a
+      heuristic score is discouraged — see docs/faq.md before setting this.
+    required: false
+    default: ''
+  llm:
+    description: >-
+      Opt-in LLM second opinion: "off", "auto", "anthropic", or "openai".
+      Requires ANTHROPIC_API_KEY or OPENAI_API_KEY in the workflow env.
+      The action is fully functional with "off".
+    required: false
+    default: 'off'
+  config-file:
+    description: >-
+      Path (relative to the workspace) of a JSON file overriding signal
+      weights, thresholds, or level bounds.
+    required: false
+    default: ''
+
+outputs:
+  score:
+    description: 'Attention score, 0-100.'
+    value: ${{ steps.analyze.outputs.score }}
+  level:
+    description: 'Attention level: low | moderate | elevated | high.'
+    value: ${{ steps.analyze.outputs.level }}
+  report-json:
+    description: 'Path to the full JSON report on the runner.'
+    value: ${{ steps.analyze.outputs.report-json }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+
+    - name: Build slopguard
+      shell: bash
+      run: |
+        set -euo pipefail
+        cd "${GITHUB_ACTION_PATH}"
+        npm ci --no-audit --no-fund
+        npm run build
+
+    - name: Analyze pull request
+      id: analyze
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.github-token }}
+        SG_DRY_RUN: ${{ inputs.dry-run }}
+        SG_THRESHOLD: ${{ inputs.threshold }}
+        SG_LLM: ${{ inputs.llm }}
+        SG_CONFIG_FILE: ${{ inputs.config-file }}
+      run: |
+        set -euo pipefail
+
+        if [ "${GITHUB_EVENT_NAME}" != "pull_request" ] && [ "${GITHUB_EVENT_NAME}" != "pull_request_target" ]; then
+          echo "SlopGuard: event '${GITHUB_EVENT_NAME}' is not a pull request event; nothing to do."
+          echo "score=0" >> "$GITHUB_OUTPUT"
+          echo "level=low" >> "$GITHUB_OUTPUT"
+          echo "report-json=" >> "$GITHUB_OUTPUT"
+          exit 0
+        fi
+
+        PR_NUMBER="$(jq -r '.pull_request.number' "$GITHUB_EVENT_PATH")"
+        REPO="${GITHUB_REPOSITORY}"
+        WORK="$(mktemp -d)"
+
+        gh api "repos/${REPO}/pulls/${PR_NUMBER}" > "${WORK}/pr.json"
+        gh api -H "Accept: application/vnd.github.diff" \
+          "repos/${REPO}/pulls/${PR_NUMBER}" > "${WORK}/pr.diff"
+
+        ARGS=(--pr "${WORK}/pr.json" --diff "${WORK}/pr.diff")
+        if [ -n "${SG_CONFIG_FILE}" ]; then
+          ARGS+=(--config "${SG_CONFIG_FILE}")
+        fi
+        if [ -n "${SG_LLM}" ] && [ "${SG_LLM}" != "off" ]; then
+          ARGS+=(--llm "${SG_LLM}")
+        fi
+
+        node "${GITHUB_ACTION_PATH}/dist/cli.js" "${ARGS[@]}" --format json > "${WORK}/report.json"
+        node "${GITHUB_ACTION_PATH}/dist/cli.js" "${ARGS[@]}" --format markdown > "${WORK}/report.md"
+        node "${GITHUB_ACTION_PATH}/dist/cli.js" "${ARGS[@]}" --no-color
+
+        SCORE="$(jq -r '.score' "${WORK}/report.json")"
+        LEVEL="$(jq -r '.level' "${WORK}/report.json")"
+        {
+          echo "score=${SCORE}"
+          echo "level=${LEVEL}"
+          echo "report-json=${WORK}/report.json"
+        } >> "$GITHUB_OUTPUT"
+
+        cat "${WORK}/report.md" >> "$GITHUB_STEP_SUMMARY"
+
+        if [ "${SG_DRY_RUN}" = "true" ]; then
+          echo "SlopGuard: dry-run is enabled; not posting a comment."
+        else
+          EXISTING_ID="$(gh api "repos/${REPO}/issues/${PR_NUMBER}/comments" --paginate \
+            --jq '[.[] | select(.body | contains("slopguard:report"))][0].id // empty')"
+          if [ -n "${EXISTING_ID}" ]; then
+            echo "SlopGuard: updating existing comment ${EXISTING_ID}."
+            gh api -X PATCH "repos/${REPO}/issues/comments/${EXISTING_ID}" \
+              -F "body=@${WORK}/report.md" > /dev/null
+          else
+            echo "SlopGuard: posting triage comment."
+            gh api -X POST "repos/${REPO}/issues/${PR_NUMBER}/comments" \
+              -F "body=@${WORK}/report.md" > /dev/null
+          fi
+        fi
+
+        if [ -n "${SG_THRESHOLD}" ] && [ "${SCORE}" -ge "${SG_THRESHOLD}" ]; then
+          echo "::warning::SlopGuard score ${SCORE} reached the opt-in threshold ${SG_THRESHOLD}."
+          echo "SlopGuard: failing the step because 'threshold' was configured. This is opt-in gating."
+          exit 2
+        fi
